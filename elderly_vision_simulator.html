@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="시각체험">
+<meta name="theme-color" content="#4A7C3F">
+<title>노인 시각 체험 시뮬레이터</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f3ef;min-height:100vh;}
+.header{background:#4A7C3F;color:#fff;padding:14px 16px 12px;position:sticky;top:0;z-index:10;}
+.header h1{font-size:17px;font-weight:600;}
+.header p{font-size:11px;opacity:0.8;margin-top:2px;}
+.wrap{padding:14px 14px 30px;}
+.slbl{font-size:12px;font-weight:600;color:#4A7C3F;margin:14px 0 7px;text-transform:uppercase;letter-spacing:0.5px;}
+.cond-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px;}
+.cb{padding:11px 4px;border-radius:10px;border:2px solid #ddd;background:#fff;cursor:pointer;font-size:11px;text-align:center;line-height:1.5;-webkit-tap-highlight-color:transparent;transition:all 0.15s;}
+.cb .ico{font-size:22px;display:block;margin-bottom:3px;}
+.cb.on{border-color:#4A7C3F;background:#eef6eb;font-weight:700;color:#2d5a1b;}
+.scene-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;}
+.sb{padding:7px 15px;border-radius:20px;border:2px solid #ddd;background:#fff;cursor:pointer;font-size:13px;color:#555;-webkit-tap-highlight-color:transparent;transition:all 0.15s;}
+.sb.on{border-color:#4A7C3F;background:#eef6eb;font-weight:700;color:#2d5a1b;}
+.vbox{position:relative;border-radius:12px;overflow:hidden;border:1px solid #ddd;margin:12px 0;background:#ccc;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+.vbox-inner{position:relative;width:100%;height:0;padding-bottom:56%;}
+#sc,#ec{position:absolute;top:0;left:0;width:100%;height:100%;}
+.lbar{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.65));padding:20px 14px 10px;display:flex;gap:8px;align-items:flex-end;}
+.ln{font-size:14px;font-weight:700;color:#fff;}
+.ld{font-size:11px;color:rgba(255,255,255,0.8);}
+.ctrlbox{background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.07);}
+.ctrlbox .empty{font-size:12px;color:#aaa;text-align:center;padding:4px 0;}
+.cr{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.cr:last-child{margin-bottom:0;}
+.cl{font-size:12px;color:#666;min-width:65px;}
+.cr input[type=range]{flex:1;height:4px;accent-color:#4A7C3F;}
+.cv{font-size:13px;font-weight:700;min-width:34px;text-align:right;color:#4A7C3F;}
+.icard{background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,0.07);}
+.iname{font-size:15px;font-weight:700;color:#222;margin-bottom:7px;}
+.itxt{font-size:12px;color:#555;line-height:1.7;margin-bottom:12px;}
+.stats{display:flex;gap:10px;flex-wrap:wrap;}
+.st{background:#f4f3ef;border-radius:8px;padding:8px 14px;text-align:center;flex:1;min-width:70px;}
+.sn{font-size:16px;font-weight:700;color:#2d5a1b;}
+.sl{font-size:10px;color:#888;margin-top:2px;}
+.tip{background:#fff8e1;border-left:3px solid #f9a825;border-radius:0 8px 8px 0;padding:10px 12px;margin-top:14px;font-size:11px;color:#555;line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>👁 노인 시각 체험 시뮬레이터</h1>
+  <p>노화로 인한 시각 변화를 직접 체험해보세요</p>
+</div>
+<div class="wrap">
+
+  <p class="slbl">질환 선택</p>
+  <div class="cond-grid">
+    <button class="cb on" onclick="selC('normal',this)"><span class="ico">👁</span>정상 시야</button>
+    <button class="cb" onclick="selC('cataract',this)"><span class="ico">🌫</span>백내장</button>
+    <button class="cb" onclick="selC('glaucoma',this)"><span class="ico">🌑</span>녹내장</button>
+    <button class="cb" onclick="selC('amd',this)"><span class="ico">🔴</span>황반변성</button>
+    <button class="cb" onclick="selC('diabetic',this)"><span class="ico">💧</span>당뇨망막병증</button>
+    <button class="cb" onclick="selC('night',this)"><span class="ico">🌙</span>야간시력저하</button>
+  </div>
+
+  <p class="slbl">배경 장면</p>
+  <div class="scene-row">
+    <button class="sb on" onclick="selS('street',this)">거리</button>
+    <button class="sb" onclick="selS('text',this)">신문</button>
+    <button class="sb" onclick="selS('face',this)">얼굴</button>
+    <button class="sb" onclick="selS('nightscene',this)">야경</button>
+  </div>
+
+  <div class="vbox">
+    <div class="vbox-inner">
+      <canvas id="sc"></canvas>
+      <canvas id="ec"></canvas>
+    </div>
+    <div class="lbar">
+      <span class="ln" id="ln">정상 시야</span>
+      <span class="ld" id="ld">건강한 성인의 시야</span>
+    </div>
+  </div>
+
+  <div class="ctrlbox" id="ctrlbox">
+    <p class="empty">다른 질환을 선택하면 강도 조절 슬라이더가 나타납니다.</p>
+  </div>
+
+  <div class="icard" id="icard">
+    <p class="iname">👁 정상 시야란?</p>
+    <p class="itxt">건강한 눈은 선명하고 넓은 시야를 가지며, 색상을 정확히 구분하고 빠른 초점 조절이 가능합니다.</p>
+    <div class="stats">
+      <div class="st"><div class="sn">20/20</div><div class="sl">시력</div></div>
+      <div class="st"><div class="sn">180°</div><div class="sl">시야각</div></div>
+    </div>
+    <div class="tip">💡 위의 질환 버튼을 눌러 노인이 보는 세상을 직접 체험해보세요!</div>
+  </div>
+
+</div>
+<script>
+var curC='normal',curS='street';
+var vals={blur:60,yellow:40,tunnel:65,scotoma:70,distort:40,spots:60,blur2:40,dark:70,glare:60};
+var info={
+  normal:{ico:'👁',name:'정상 시야',desc:'건강한 성인의 시야',detail:'건강한 눈은 선명하고 넓은 시야를 가지며, 색상을 정확히 구분하고 빠른 초점 조절이 가능합니다.',stats:[{n:'20/20',l:'시력'},{n:'180°',l:'시야각'}],tip:'위의 질환 버튼을 눌러 노인이 보는 세상을 직접 체험해보세요!'},
+  cataract:{ico:'🌫',name:'백내장',desc:'수정체 혼탁으로 시야 흐림',detail:'수정체가 혼탁해져 안개 낀 것처럼 흐릿해지는 질환입니다. 색상이 노랗게 변색되어 보이기도 합니다. 60세 이상의 약 70%에서 발생하며 수술로 치료가 가능합니다.',stats:[{n:'70%',l:'60세 이상'},{n:'1위',l:'실명 원인'}],tip:'슬라이더를 최대로 올려 심한 백내장을 체험해보세요.'},
+  glaucoma:{ico:'🌑',name:'녹내장',desc:'주변 시야부터 점차 협착',detail:'시신경 손상으로 주변 시야가 서서히 좁아지는 질환입니다. 초기에는 자각증상이 거의 없어 "침묵의 실명"이라 불립니다. 40세 이상의 약 3.5%에서 발생합니다.',stats:[{n:'3.5%',l:'40세 이상'},{n:'2위',l:'실명 원인'}],tip:'시야 협착 슬라이더를 올리면 점점 터널처럼 좁아집니다.'},
+  amd:{ico:'🔴',name:'황반변성',desc:'중심 시야 손상 및 왜곡',detail:'망막 중심부(황반)가 손상되어 중심 시야가 검게 보이거나 왜곡되는 질환입니다. 독서, 얼굴 인식, 운전이 매우 어려워집니다.',stats:[{n:'10%',l:'75세 이상'},{n:'3위',l:'실명 원인'}],tip:'"신문" 배경에서 체험하면 독서의 어려움을 느낄 수 있어요.'},
+  diabetic:{ico:'💧',name:'당뇨망막병증',desc:'혈관 손상으로 부유물·출혈',detail:'당뇨병으로 망막 혈관이 손상되어 출혈과 부유물이 생기는 질환입니다. 당뇨 환자의 약 30%에서 발생하며 치료하지 않으면 실명으로 이어질 수 있습니다.',stats:[{n:'30%',l:'당뇨환자'},{n:'4위',l:'실명 원인'}],tip:'부유물 슬라이더를 올리면 떠다니는 점들이 보입니다.'},
+  night:{ico:'🌙',name:'야간시력저하',desc:'어두운 환경 시야 크게 저하',detail:'노화로 동공이 작아지고 간상세포가 줄어들어 어두운 환경에서 시력이 크게 저하됩니다. 빛 번짐(눈부심)도 심해져 야간 운전이 위험해집니다.',stats:[{n:'50%↓',l:'야간 시력'},{n:'3배',l:'적응 시간'}],tip:'"야경" 배경으로 바꾸고 체험하면 더 실감납니다.'}
+};
+var ctrlDefs={
+  cataract:[{id:'blur',label:'흐림'},{id:'yellow',label:'황색화'}],
+  glaucoma:[{id:'tunnel',label:'시야 협착'}],
+  amd:[{id:'scotoma',label:'중심 암점'},{id:'distort',label:'왜곡'}],
+  diabetic:[{id:'spots',label:'부유물'},{id:'blur2',label:'흐림'}],
+  night:[{id:'dark',label:'어두움'},{id:'glare',label:'빛 번짐'}]
+};
+function selC(id,el){curC=id;document.querySelectorAll('.cb').forEach(function(b){b.classList.remove('on');});el.classList.add('on');updateInfo();updateCtrl();draw();effect();}
+function selS(id,el){curS=id;document.querySelectorAll('.sb').forEach(function(b){b.classList.remove('on');});el.classList.add('on');draw();effect();}
+function updVal(id,v){vals[id]=parseInt(v);var el=document.getElementById('v-'+id);if(el)el.textContent=v+'%';effect();}
+function updateInfo(){
+  var d=info[curC];
+  document.getElementById('ln').textContent=d.name;
+  document.getElementById('ld').textContent=d.desc;
+  document.getElementById('icard').innerHTML='<p class="iname">'+d.ico+' '+d.name+'이란?</p><p class="itxt">'+d.detail+'</p><div class="stats">'+d.stats.map(function(s){return '<div class="st"><div class="sn">'+s.n+'</div><div class="sl">'+s.l+'</div></div>';}).join('')+'</div><div class="tip">💡 '+d.tip+'</div>';
+}
+function updateCtrl(){
+  var box=document.getElementById('ctrlbox');
+  var defs=ctrlDefs[curC];
+  if(!defs){box.innerHTML='<p class="empty">다른 질환을 선택하면 강도 조절 슬라이더가 나타납니다.</p>';return;}
+  box.innerHTML=defs.map(function(c){return '<div class="cr"><span class="cl">'+c.label+'</span><input type="range" min="0" max="100" step="1" value="'+vals[c.id]+'" oninput="updVal(\''+c.id+'\',this.value)"><span class="cv" id="v-'+c.id+'">'+vals[c.id]+'%</span></div>';}).join('');
+}
+function gWH(){
+  var sc=document.getElementById('sc');
+  var p=sc.parentElement;
+  var w=p.offsetWidth||320;
+  var h=p.offsetHeight||180;
+  if(sc.width!==w||sc.height!==h){sc.width=w;sc.height=h;var ec=document.getElementById('ec');ec.width=w;ec.height=h;}
+  return{w:w,h:h};
+}
+function draw(){
+  var wh=gWH(),w=wh.w,h=wh.h;
+  var cv=document.getElementById('sc'),ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,w,h);
+  if(curS==='street'){
+    ctx.fillStyle='#87CEEB';ctx.fillRect(0,0,w,h*0.55);
+    ctx.fillStyle='#6BB3D4';
+    [[w*0.15,55,35],[w*0.42,45,48],[w*0.72,58,30]].forEach(function(a){ctx.beginPath();ctx.arc(a[0],a[1],a[2],0,Math.PI*2);ctx.fill();});
+    ctx.fillStyle='#4A7C3F';ctx.fillRect(0,h*0.55,w,h*0.1);
+    ctx.fillStyle='#777';ctx.fillRect(0,h*0.65,w,h*0.35);
+    ctx.fillStyle='#fff';for(var i=0;i<5;i++)ctx.fillRect(35+i*(w/5.2),h*0.77,w/10,6);
+    ctx.fillStyle='#C8A87A';ctx.fillRect(w*0.08,h*0.18,w*0.13,h*0.47);
+    ctx.fillStyle='#8B6914';ctx.fillRect(w*0.07,h*0.15,w*0.15,8);
+    ctx.fillStyle='#A0522D';ctx.fillRect(w*0.135,h*0.46,13,h*0.19);
+    ctx.fillStyle='#D2B48C';ctx.fillRect(w*0.36,h*0.25,w*0.16,h*0.4);
+    ctx.fillStyle='#B8860B';ctx.fillRect(w*0.35,h*0.22,w*0.18,8);
+    ctx.fillStyle='#555';ctx.fillRect(w*0.63,h*0.34,w*0.14,65);
+    ctx.fillStyle='#333';ctx.font='bold '+Math.max(10,w*0.025)+'px sans-serif';ctx.fillText('버스정류장',w*0.635,h*0.32);
+    var cols=['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEAA7'];
+    [0.1,0.28,0.47,0.64,0.81].forEach(function(xr,i){ctx.fillStyle=cols[i];ctx.beginPath();ctx.arc(w*xr,h*0.51,8,0,Math.PI*2);ctx.fill();ctx.fillStyle='#333';ctx.fillRect(w*xr-4,h*0.51+8,8,16);});
+  } else if(curS==='text'){
+    ctx.fillStyle='#F5F0E8';ctx.fillRect(0,0,w,h);
+    var fs=Math.max(9,Math.floor(w*0.032));
+    ctx.fillStyle='#222';ctx.font='bold '+(fs*1.8)+'px serif';ctx.fillText('조선일보',16,fs*2);
+    ctx.fillStyle='#555';ctx.font=fs+'px sans-serif';ctx.fillText('2024년 12월 10일 화요일',16,fs*3.2);
+    ctx.strokeStyle='#ccc';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(16,fs*3.8);ctx.lineTo(w-16,fs*3.8);ctx.stroke();
+    ctx.fillStyle='#333';ctx.font='bold '+(fs*1.3)+'px serif';ctx.fillText('고령화 사회, 노인 건강 관리의 중요성',16,fs*5.2);
+    ctx.fillStyle='#444';ctx.font=fs+'px serif';
+    ['우리나라는 빠른 속도로 고령화 사회로 진입하고 있습니다.','65세 이상 인구 비율이 20%를 넘어서면서 노인 건강','관리에 대한 사회적 관심이 높아지고 있습니다.','시력 저하 등 감각기관 노화는 일상생활에 큰 불편을','줍니다. 전문가들은 정기적인 안과 검진을 권장합니다.'].forEach(function(l,i){ctx.fillText(l,16,fs*6.8+i*fs*1.55);});
+    ctx.fillStyle='#222';ctx.font='bold '+(fs*1.1)+'px serif';ctx.fillText('■ 주요 노인 안질환',16,h*0.78);
+    ['• 백내장: 60세이상 70%','• 녹내장: 40세이상 3.5%','• 황반변성: 75세이상 10%'].forEach(function(l,i){ctx.fillStyle='#444';ctx.font=fs+'px serif';ctx.fillText(l,16,h*0.78+fs*1.6+i*fs*1.5);});
+  } else if(curS==='face'){
+    ctx.fillStyle='#E8D5B7';ctx.fillRect(0,0,w,h);
+    var cx=w/2,cy=h/2;
+    ctx.fillStyle='#FDBCB4';ctx.beginPath();ctx.ellipse(cx,cy,w*0.18,h*0.46,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#4A2C00';ctx.beginPath();ctx.ellipse(cx,cy-h*0.38,w*0.15,h*0.16,0,0,Math.PI*2);ctx.fill();
+    [[cx-w*0.08,cy-h*0.09],[cx+w*0.08,cy-h*0.09]].forEach(function(p){
+      ctx.fillStyle='#5C3A1E';ctx.beginPath();ctx.ellipse(p[0],p[1],w*0.035,h*0.056,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(p[0],p[1],w*0.027,h*0.043,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#3B2314';ctx.beginPath();ctx.ellipse(p[0],p[1],w*0.015,h*0.029,0,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#5C3A1E';ctx.lineWidth=2;ctx.beginPath();ctx.arc(p[0],p[1],w*0.027,-0.3,Math.PI+0.3);ctx.stroke();
+    });
+    ctx.fillStyle='#FDBCB4';ctx.beginPath();ctx.ellipse(cx,cy+h*0.03,w*0.018,h*0.025,0,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#C07850';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy+h*0.16,w*0.055,0.1,Math.PI-0.1);ctx.stroke();
+    ctx.fillStyle='#6B4226';ctx.font='bold '+Math.max(11,w*0.028)+'px sans-serif';ctx.fillText('김영희 할머니 (78세)',cx-w*0.22,h-16);
+  } else {
+    ctx.fillStyle='#070712';ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='#111128';ctx.fillRect(0,h*0.6,w,h*0.4);
+    for(var i=0;i<55;i++){ctx.fillStyle='rgba(255,255,200,'+(0.2+Math.random()*0.8)+')';ctx.beginPath();ctx.arc(Math.random()*w,Math.random()*h*0.55,0.8+Math.random()*1.5,0,Math.PI*2);ctx.fill();}
+    [{x:w*0.05,bw:w*0.12,bh:h*0.72},{x:w*0.23,bw:w*0.15,bh:h*0.58},{x:w*0.47,bw:w*0.11,bh:h*0.76},{x:w*0.65,bw:w*0.14,bh:h*0.64},{x:w*0.83,bw:w*0.1,bh:h*0.5}].forEach(function(b){
+      ctx.fillStyle='#181830';ctx.fillRect(b.x,h-b.bh,b.bw,b.bh);
+      for(var r=0;r<Math.floor(b.bh/22);r++)for(var c=0;c<Math.floor(b.bw/16);c++){if(Math.random()>0.45){ctx.fillStyle='rgba(255,215,80,'+(0.25+Math.random()*0.55)+')';ctx.fillRect(b.x+c*16+2,h-b.bh+r*22+3,8,11);}}
+    });
+    ctx.fillStyle='rgba(255,150,40,0.9)';[-3,-2,-1,0,1,2,3].forEach(function(o){ctx.beginPath();ctx.arc(w*0.32+o*2,h*0.72,3-Math.abs(o)*0.4,0,Math.PI*2);ctx.fill();});
+    ctx.fillStyle='rgba(180,190,255,0.9)';[-2,-1,0,1,2].forEach(function(o){ctx.beginPath();ctx.arc(w*0.68+o*2,h*0.68,2.5-Math.abs(o)*0.3,0,Math.PI*2);ctx.fill();});
+  }
+}
+function effect(){
+  var wh=gWH(),w=wh.w,h=wh.h;
+  var cv=document.getElementById('ec'),ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,w,h);
+  if(curC==='normal')return;
+  if(curC==='cataract'){
+    var bl=vals.blur/100,yl=vals.yellow/100;
+    ctx.fillStyle='rgba(255,248,200,'+bl*0.72+')';ctx.fillRect(0,0,w,h);
+    for(var i=0;i<16;i++){ctx.beginPath();ctx.arc(Math.random()*w,Math.random()*h,30+Math.random()*70,0,Math.PI*2);ctx.fillStyle='rgba(255,255,210,'+bl*0.16+')';ctx.fill();}
+    if(yl>0.1){ctx.fillStyle='rgba(155,115,0,'+yl*0.22+')';ctx.fillRect(0,0,w,h);}
+  }
+  if(curC==='glaucoma'){
+    var t=vals.tunnel/100,cx=w/2,cy=h/2,rad=w*(0.52-t*0.38);
+    ctx.fillStyle='rgba(0,0,0,0.97)';ctx.fillRect(0,0,w,h);
+    ctx.save();ctx.globalCompositeOperation='destination-out';
+    var g=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(12,rad));
+    g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(0.65,'rgba(0,0,0,1)');g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g;ctx.fillRect(0,0,w,h);ctx.restore();
+  }
+  if(curC==='amd'){
+    var sc=vals.scotoma/100,di=vals.distort/100,cx=w/2,cy=h/2,r=40+sc*60;
+    var g=ctx.createRadialGradient(cx,cy,r*0.25,cx,cy,r);
+    g.addColorStop(0,'rgba(12,12,12,0.97)');g.addColorStop(0.55,'rgba(65,40,40,0.75)');g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+    if(di>0.1){for(var i=0;i<10;i++){ctx.fillStyle='rgba(85,65,65,'+di*0.36+')';ctx.beginPath();ctx.ellipse(cx-60+Math.random()*120,cy-60+Math.random()*120,10+Math.random()*16,4+Math.random()*6,Math.random()*Math.PI,0,Math.PI*2);ctx.fill();}}
+  }
+  if(curC==='diabetic'){
+    var sp=vals.spots/100,bl=vals.blur2/100;
+    if(bl>0.1){ctx.fillStyle='rgba(185,165,150,'+bl*0.46+')';ctx.fillRect(0,0,w,h);}
+    for(var i=0;i<Math.floor(sp*25);i++){ctx.fillStyle='rgba(65,12,12,'+(0.4+Math.random()*0.5)+')';ctx.beginPath();ctx.arc(Math.random()*w,Math.random()*h,2+Math.random()*5,0,Math.PI*2);ctx.fill();}
+    for(var i=0;i<Math.floor(sp*6);i++){ctx.strokeStyle='rgba(100,22,22,'+(0.3+Math.random()*0.4)+')';ctx.lineWidth=1+Math.random()*2;ctx.beginPath();var x1=Math.random()*w,y1=Math.random()*h;ctx.moveTo(x1,y1);ctx.lineTo(x1+Math.random()*34-17,y1+Math.random()*34-17);ctx.stroke();}
+  }
+  if(curC==='night'){
+    var dk=vals.dark/100,gl=vals.glare/100;
+    ctx.fillStyle='rgba(0,0,12,'+dk*0.88+')';ctx.fillRect(0,0,w,h);
+    if(gl>0.1){
+      var srcs=curS==='nightscene'?[[w*0.32,h*0.72],[w*0.68,h*0.68]]:[[w*0.3,h*0.35],[w*0.65,h*0.4]];
+      srcs.forEach(function(lp){var gr=ctx.createRadialGradient(lp[0],lp[1],0,lp[0],lp[1],70+gl*105);gr.addColorStop(0,'rgba(255,255,190,'+gl*0.8+')');gr.addColorStop(0.35,'rgba(255,210,85,'+gl*0.36+')');gr.addColorStop(1,'rgba(255,185,35,0)');ctx.fillStyle=gr;ctx.fillRect(0,0,w,h);});
+    }
+  }
+}
+function init(){
+  var p=document.getElementById('sc').parentElement;
+  var w=p.offsetWidth||320,h=Math.round(w*0.5625);
+  ['sc','ec'].forEach(function(id){var c=document.getElementById(id);c.width=w;c.height=h;});
+  draw();
+  window.addEventListener('resize',function(){var w2=p.offsetWidth||320,h2=Math.round(w2*0.5625);['sc','ec'].forEach(function(id){var c=document.getElementById(id);c.width=w2;c.height=h2;});draw();effect();});
+}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}else{init();}
+</script>
+</body>
+</html>
