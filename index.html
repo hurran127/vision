@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="시각 체험">
+<meta name="theme-color" content="#1a237e">
+<title>어르신의 눈으로 시각 체험</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
+    background: #0d0d1a;
+    color: #fff;
+    overflow-x: hidden;
+  }
+
+  .topbar {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(26,35,126,0.97);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .top-eye { font-size: 22px; }
+  .top-title { font-size: 15px; font-weight: 700; flex: 1; }
+  .new-badge {
+    background: #e53935;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 9px;
+    border-radius: 20px;
+  }
+
+  .video-wrap {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: #000;
+    position: relative;
+    overflow: hidden;
+  }
+  #videoEl { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #canvasEl {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; display: none;
+  }
+
+  .cam-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.72);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
+  }
+  .cam-overlay-icon { font-size: 48px; opacity: 0.7; }
+  .cam-overlay p { color: rgba(255,255,255,0.75); font-size: 14px; text-align: center; line-height: 1.65; }
+  .start-btn {
+    background: #3f51b5; color: #fff; border: none;
+    border-radius: 28px; padding: 13px 36px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+  .start-btn:active { opacity: 0.82; }
+
+  /* 필터 섹션 */
+  .filter-section {
+    padding: 1rem 1rem 0.5rem;
+    background: #1a237e;
+  }
+  .filter-label {
+    font-size: 11px; color: rgba(255,255,255,0.45);
+    font-weight: 600; letter-spacing: 0.8px;
+    text-transform: uppercase; margin-bottom: 10px;
+  }
+  .filters-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .filter-btn {
+    background: rgba(255,255,255,0.10);
+    border: 1.5px solid rgba(255,255,255,0.18);
+    border-radius: 14px; padding: 10px 6px 8px;
+    cursor: pointer; display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+    transition: background 0.12s, border-color 0.12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .filter-btn.active {
+    background: rgba(99,102,241,0.40);
+    border-color: #818cf8;
+  }
+  .filter-btn:active { opacity: 0.75; }
+  .f-icon { font-size: 22px; }
+  .f-name { font-size: 11.5px; font-weight: 700; color: #fff; text-align: center; line-height: 1.3; }
+  .f-sub  { font-size: 10px; color: rgba(255,255,255,0.55); text-align: center; }
+
+  /* 강도 슬라이더 섹션 */
+  .intensity-section {
+    background: #151b5e;
+    padding: 0.85rem 1rem;
+    display: none;
+  }
+  .intensity-section.visible { display: block; }
+
+  .intensity-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .intensity-label {
+    font-size: 11px; color: rgba(255,255,255,0.45);
+    font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;
+  }
+  .intensity-value {
+    font-size: 13px; font-weight: 700;
+    color: #818cf8;
+  }
+
+  .steps-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .step-btn {
+    flex: 1;
+    padding: 9px 4px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .step-btn .step-dot {
+    display: flex; gap: 3px; margin-bottom: 2px;
+  }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+  }
+  .step-btn.active {
+    background: rgba(99,102,241,0.45);
+    border-color: #818cf8;
+    color: #fff;
+  }
+  .step-btn.active .dot { background: #818cf8; }
+  .step-btn:active { opacity: 0.75; }
+
+  .desc-card {
+    padding: 12px 16px;
+    font-size: 13px; line-height: 1.65;
+    color: rgba(255,255,255,0.82);
+    background: #0f1440;
+  }
+  .desc-card strong { color: #fff; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="top-eye" aria-hidden="true">👁</span>
+  <span class="top-title">어르신의 눈으로 시각 체험</span>
+  <span class="new-badge">NEW</span>
+</div>
+
+<div class="video-wrap">
+  <video id="videoEl" autoplay playsinline muted></video>
+  <canvas id="canvasEl"></canvas>
+  <div class="cam-overlay" id="camOverlay">
+    <div class="cam-overlay-icon">🎥</div>
+    <p>카메라를 켜서<br>노화 시각 체험을 시작하세요</p>
+    <button class="start-btn" id="startBtn">카메라 시작</button>
+  </div>
+</div>
+
+<div class="filter-section">
+  <p class="filter-label">시각 증상 선택</p>
+  <div class="filters-grid">
+    <button class="filter-btn active" data-filter="normal">
+      <span class="f-icon">👁</span>
+      <span class="f-name">정상 시야</span>
+      <span class="f-sub">필터 없음</span>
+    </button>
+    <button class="filter-btn" data-filter="cataract">
+      <span class="f-icon">🌫</span>
+      <span class="f-name">백내장</span>
+      <span class="f-sub">흐림·노란빛</span>
+    </button>
+    <button class="filter-btn" data-filter="glaucoma">
+      <span class="f-icon">⭕</span>
+      <span class="f-name">녹내장</span>
+      <span class="f-sub">터널 시야</span>
+    </button>
+    <button class="filter-btn" data-filter="amd">
+      <span class="f-icon">🕳</span>
+      <span class="f-name">황반변성</span>
+      <span class="f-sub">중심 암점</span>
+    </button>
+    <button class="filter-btn" data-filter="dr">
+      <span class="f-icon">💧</span>
+      <span class="f-name">당뇨망막병증</span>
+      <span class="f-sub">부유물·암점</span>
+    </button>
+    <button class="filter-btn" data-filter="lowvision">
+      <span class="f-icon">🌑</span>
+      <span class="f-name">저시력</span>
+      <span class="f-sub">전반적 저하</span>
+    </button>
+  </div>
+</div>
+
+<!-- 강도 단계 -->
+<div class="intensity-section" id="intensitySection">
+  <div class="intensity-header">
+    <span class="intensity-label">증상 강도</span>
+    <span class="intensity-value" id="intensityValue">약함</span>
+  </div>
+  <div class="steps-row">
+    <button class="step-btn active" data-level="1">
+      <div class="step-dot"><div class="dot"></div></div>
+      <span>약함</span>
+      <span style="font-size:10px;color:rgba(255,255,255,0.45)">초기</span>
+    </button>
+    <button class="step-btn" data-level="2">
+      <div class="step-dot"><div class="dot"></div><div class="dot"></div></div>
+      <span>중간</span>
+      <span style="font-size:10px;color:rgba(255,255,255,0.45)">중기</span>
+    </button>
+    <button class="step-btn" data-level="3">
+      <div class="step-dot"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      <span>강함</span>
+      <span style="font-size:10px;color:rgba(255,255,255,0.45)">말기</span>
+    </button>
+  </div>
+</div>
+
+<div class="desc-card" id="descCard">
+  <strong>정상 시야</strong> — 필터가 적용되지 않은 일반 시야입니다.
+</div>
+
+<script>
+const FILTERS_INFO = {
+  normal: {
+    1: { desc: '<strong>정상 시야</strong> — 필터가 적용되지 않은 일반 시야입니다.' },
+  },
+  cataract: {
+    1: { desc: '<strong>백내장 (초기)</strong> — 수정체가 조금 흐려지기 시작합니다. 밝은 빛에서 약간의 눈부심이 느껴집니다.' },
+    2: { desc: '<strong>백내장 (중기)</strong> — 시야가 뿌옇고 노란빛이 강해집니다. 야간 운전이나 독서가 어려워집니다.' },
+    3: { desc: '<strong>백내장 (말기)</strong> — 심한 혼탁으로 윤곽만 겨우 보입니다. 일상생활이 크게 제한됩니다.' },
+  },
+  glaucoma: {
+    1: { desc: '<strong>녹내장 (초기)</strong> — 주변 시야가 약간 좁아집니다. 본인이 느끼기 어려운 단계입니다.' },
+    2: { desc: '<strong>녹내장 (중기)</strong> — 터널 시야가 뚜렷해집니다. 계단이나 장애물을 피하기 어렵습니다.' },
+    3: { desc: '<strong>녹내장 (말기)</strong> — 중심 시야만 남고 사방이 어둡습니다. 보행에 심각한 어려움이 있습니다.' },
+  },
+  amd: {
+    1: { desc: '<strong>황반변성 (초기)</strong> — 중앙이 약간 흐리거나 일그러져 보입니다. 독서 시 글자가 휘어 보입니다.' },
+    2: { desc: '<strong>황반변성 (중기)</strong> — 중앙에 회색빛 암점이 생깁니다. 얼굴 인식이 어려워집니다.' },
+    3: { desc: '<strong>황반변성 (말기)</strong> — 중앙이 완전히 검게 보입니다. 주변 시야로만 생활해야 합니다.' },
+  },
+  dr: {
+    1: { desc: '<strong>당뇨망막병증 (초기)</strong> — 작은 출혈 반점이 드문드문 보입니다. 시력 저하가 시작됩니다.' },
+    2: { desc: '<strong>당뇨망막병증 (중기)</strong> — 부유물과 암점이 늘어납니다. 시야가 전반적으로 흐려집니다.' },
+    3: { desc: '<strong>당뇨망막병증 (말기)</strong> — 심한 출혈로 시야가 크게 가려집니다. 실명 위험이 있습니다.' },
+  },
+  lowvision: {
+    1: { desc: '<strong>저시력 (경도)</strong> — 전반적으로 약간 어둡고 흐릿하게 보입니다. 작은 글씨가 읽기 어렵습니다.' },
+    2: { desc: '<strong>저시력 (중등도)</strong> — 상당히 어둡고 흐릿합니다. 보조기구 없이는 생활이 어렵습니다.' },
+    3: { desc: '<strong>저시력 (고도)</strong> — 빛과 그림자만 겨우 구분합니다. 대부분의 시각 활동이 불가능합니다.' },
+  },
+};
+
+const video = document.getElementById('videoEl');
+const canvas = document.getElementById('canvasEl');
+const ctx = canvas.getContext('2d');
+const overlay = document.getElementById('camOverlay');
+const descCard = document.getElementById('descCard');
+const intensitySection = document.getElementById('intensitySection');
+const intensityValue = document.getElementById('intensityValue');
+const LEVEL_LABEL = { 1: '약함', 2: '중간', 3: '강함' };
+
+let currentFilter = 'normal';
+let currentLevel = 1;
+
+document.getElementById('startBtn').addEventListener('click', async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } },
+      audio: false
+    });
+    video.srcObject = stream;
+    await video.play();
+    overlay.style.display = 'none';
+    canvas.style.display = 'block';
+    startLoop();
+  } catch(e) {
+    overlay.querySelector('p').textContent = '카메라 접근이 거부되었습니다.\n설정에서 카메라 권한을 허용해 주세요.';
+  }
+});
+
+// 필터 선택
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    currentLevel = 1;
+    // 강도 슬라이더 표시 여부
+    if (currentFilter === 'normal') {
+      intensitySection.classList.remove('visible');
+    } else {
+      intensitySection.classList.add('visible');
+      document.querySelectorAll('.step-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.level) === 1);
+      });
+      intensityValue.textContent = LEVEL_LABEL[1];
+    }
+    updateDesc();
+  });
+});
+
+// 강도 단계 선택
+document.querySelectorAll('.step-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentLevel = parseInt(btn.dataset.level);
+    intensityValue.textContent = LEVEL_LABEL[currentLevel];
+    updateDesc();
+  });
+});
+
+function updateDesc() {
+  const info = FILTERS_INFO[currentFilter];
+  const level = info[currentLevel] || info[1];
+  descCard.innerHTML = level.desc;
+}
+
+function startLoop() {
+  function draw() {
+    if (video.readyState < 2) { requestAnimationFrame(draw); return; }
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    applyFilter(currentFilter, currentLevel);
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function applyFilter(type, level) {
+  const w = canvas.width, h = canvas.height;
+  const cx = w / 2, cy = h / 2;
+  const t = level / 3; // 0.33 / 0.67 / 1.0
+  if (type === 'normal') return;
+
+  if (type === 'cataract') {
+    const yellow = [0.15, 0.25, 0.38][level - 1];
+    const blur   = [0.25, 0.45, 0.62][level - 1];
+    ctx.fillStyle = `rgba(255,240,140,${yellow})`;
+    ctx.fillRect(0, 0, w, h);
+    const id = ctx.getImageData(0, 0, w, h);
+    const d = id.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const avg = d[i]*0.3 + d[i+1]*0.59 + d[i+2]*0.11;
+      const b2 = blur * 0.7;
+      d[i]   = Math.min(255, d[i]   * (1-b2) + avg * b2 + 20*t);
+      d[i+1] = Math.min(255, d[i+1] * (1-b2) + avg * b2 + 12*t);
+      d[i+2] = Math.min(255, d[i+2] * (1-b2) + avg * b2);
+    }
+    ctx.putImageData(id, 0, 0);
+  }
+
+  if (type === 'glaucoma') {
+    const innerR = [0.38, 0.28, 0.18][level - 1];
+    const outerDark = [0.82, 0.92, 0.99][level - 1];
+    const r = Math.min(w, h) * innerR;
+    const g = ctx.createRadialGradient(cx, cy, r, cx, cy, Math.max(w, h) * 0.9);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(0.35, `rgba(0,0,0,${outerDark * 0.7})`);
+    g.addColorStop(1, `rgba(0,0,0,${outerDark})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  if (type === 'amd') {
+    const spotR = [0.10, 0.17, 0.26][level - 1];
+    const dark  = [0.70, 0.93, 0.98][level - 1];
+    const r = Math.min(w, h) * spotR;
+    const g = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r * 1.15);
+    g.addColorStop(0, `rgba(0,0,0,${dark})`);
+    g.addColorStop(0.6, `rgba(0,0,0,${dark * 0.5})`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  if (type === 'dr') {
+    const count  = [4, 7, 12][level - 1];
+    const alpha  = [0.55, 0.75, 0.90][level - 1];
+    const tint   = [0.07, 0.13, 0.20][level - 1];
+    ctx.fillStyle = `rgba(100,10,10,${tint})`;
+    ctx.fillRect(0, 0, w, h);
+    const allSpots = [
+      [cx*0.65,cy*0.75,20],[cx*1.35,cy*1.25,14],[cx*0.85,cy*1.45,24],
+      [cx*1.5,cy*0.65,16],[cx*0.45,cy*1.05,11],[cx*1.15,cy*0.5,18],
+      [cx*0.3,cy*0.6,9],[cx*1.6,cy*1.4,13],[cx*0.7,cy*1.6,17],
+      [cx*1.2,cy*1.5,10],[cx*0.5,cy*0.4,15],[cx*1.7,cy*0.9,12]
+    ];
+    allSpots.slice(0, count).forEach(([x, y, r]) => {
+      const dg = ctx.createRadialGradient(x, y, 0, x, y, r * (1 + t * 0.5));
+      dg.addColorStop(0, `rgba(40,0,0,${alpha})`);
+      dg.addColorStop(1, 'rgba(40,0,0,0)');
+      ctx.fillStyle = dg;
+      ctx.beginPath(); ctx.arc(x, y, r * (1 + t * 0.5), 0, Math.PI * 2); ctx.fill();
+    });
+  }
+
+  if (type === 'lowvision') {
+    const bright = [0.58, 0.40, 0.22][level - 1];
+    const vignette = [0.45, 0.62, 0.80][level - 1];
+    const id = ctx.getImageData(0, 0, w, h);
+    const d = id.data;
+    for (let i = 0; i < d.length; i += 4) {
+      d[i]   = d[i]   * bright;
+      d[i+1] = d[i+1] * bright;
+      d[i+2] = d[i+2] * bright;
+    }
+    ctx.putImageData(id, 0, 0);
+    const g = ctx.createRadialGradient(cx, cy, h * 0.06, cx, cy, h * 0.7);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, `rgba(0,0,0,${vignette})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+  }
+}
+</script>
+</body>
+</html>
